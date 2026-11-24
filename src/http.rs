@@ -348,6 +348,9 @@ struct Server {
 
 impl Server {
     fn start(command: &[String], launch: &Launch, repo: &Path, port: u16) -> Result<Server> {
+        if TcpStream::connect_timeout(&local(port), Duration::from_millis(100)).is_ok() {
+            bail!("port {port} is already in use");
+        }
         let dir = app::temp_dir("server")?;
         let words: Vec<String> = command
             .iter()
@@ -390,11 +393,14 @@ impl Server {
             .with_context(|| format!("starting `{}`", command.join(" ")))?;
         let deadline = Instant::now() + READY;
         loop {
-            if TcpStream::connect_timeout(&local(port), Duration::from_millis(200)).is_ok() {
-                break;
-            }
             let failure = if let Some(status) = child.try_wait()? {
                 Some(format!("exited ({status}) before listening"))
+            } else if TcpStream::connect_timeout(&local(port), Duration::from_millis(200)).is_ok() {
+                if let Some(status) = child.try_wait()? {
+                    Some(format!("exited ({status}) before listening"))
+                } else {
+                    break;
+                }
             } else if Instant::now() > deadline {
                 Some(format!("did not listen within {}s", READY.as_secs()))
             } else {

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `app record` and `app replay` fail with `port <port> is already in use` before spawning a server
+  on an occupied port and check whether the child exited before treating the port as ready (#326).
+
 ## 4.0.0 (2026-11-24)
 
 - A documentation site at [rust-anything.com](https://rust-anything.com): the README, the guides

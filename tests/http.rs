@@ -654,3 +654,96 @@ fn csharp_server() {
         original: "server",
     });
 }
+
+#[test]
+fn http_fixed_port_rejects_existing_listener_and_early_exit() {
+    if !common::have("node") {
+        return;
+    }
+    let repo = fixture("ts", "fixed-port-guard");
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+
+    // Recording against an already-occupied fixed port fails before spawning the server.
+    let record_err = app::record(&RecordOptions {
+        repo: &repo,
+        run: &words("node server.js"),
+        inputs: None,
+        normalize: &[],
+        name: None,
+        traps: false,
+        timeout_secs: None,
+        http: true,
+        server_args: &[],
+        fresh: &[],
+        pace_ms: None,
+        port: Some(port),
+        float_tolerance: None,
+        float_files: &[],
+        effects: None,
+    })
+    .unwrap_err();
+    assert!(
+        record_err
+            .to_string()
+            .contains(&format!("port {port} is already in use")),
+        "expected port-in-use error on record, got: {record_err:#}"
+    );
+    drop(listener);
+
+    // Record cleanly while the fixed port is free.
+    let recorded = app::record(&RecordOptions {
+        repo: &repo,
+        run: &words("node server.js"),
+        inputs: None,
+        normalize: &[],
+        name: None,
+        traps: false,
+        timeout_secs: None,
+        http: true,
+        server_args: &[],
+        fresh: &[],
+        pace_ms: None,
+        port: Some(port),
+        float_tolerance: None,
+        float_files: &[],
+        effects: None,
+    })
+    .unwrap();
+    assert!(recorded.cases > 0);
+
+    // Reoccupying the fixed port must fail replay instead of passing against the unrelated listener.
+    let occupied = std::net::TcpListener::bind(("127.0.0.1", port)).unwrap();
+    let replay_occupied_err = app::replay(&ReplayOptions {
+        case: None,
+        repo: &repo,
+        build: Some("false"),
+        timeout_secs: None,
+        port: None,
+    })
+    .unwrap_err();
+    assert!(
+        replay_occupied_err
+            .to_string()
+            .contains(&format!("port {port} is already in use")),
+        "expected port-in-use error on replay, got: {replay_occupied_err:#}"
+    );
+    drop(occupied);
+
+    // With the port free, a build that exits immediately must fail as exited before listening.
+    let early_exit_err = app::replay(&ReplayOptions {
+        case: None,
+        repo: &repo,
+        build: Some("false"),
+        timeout_secs: None,
+        port: None,
+    })
+    .unwrap_err();
+    let msg = early_exit_err.to_string();
+    assert!(
+        msg.contains("exited") && msg.contains("before listening"),
+        "expected exited-before-listening error, got: {early_exit_err:#}"
+    );
+
+    std::fs::remove_dir_all(repo).unwrap();
+}
