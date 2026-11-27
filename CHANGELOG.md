@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `analyze` also counts `Number.parseInt` and `Number.parseFloat` calls as `Number semantics`,
+  alongside global `parseInt` and `parseFloat`.
 - The Android 16 KB page-size check says "1 LOAD segment is not 16 KB aligned" for one
   misaligned segment and "2 LOAD segments are not 16 KB aligned" for more, instead of
   "LOAD segment(s) are" (#718, #728 by @MannXo).

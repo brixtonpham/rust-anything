@@ -289,7 +289,9 @@ impl<'a> Visit<'a> for Collector {
                     | (Some("crypto"), "randomUUID" | "getRandomValues") => {
                         self.add(Risk::ClockAndRandom, it.span);
                     }
-                    (Some("Math"), "round") | (_, "toFixed") => {
+                    (Some("Math"), "round")
+                    | (Some("Number"), "parseInt" | "parseFloat")
+                    | (_, "toFixed") => {
                         self.add(Risk::NumberSemantics, it.span);
                     }
                     (Some("Intl"), _)
@@ -563,10 +565,12 @@ mod tests {
             "ms.ts",
             "const re = /^(\\d+) *(secs?|ms)$/i\n\
              export const r = (x: number) => Math.round(x)\n\
-             export const f = (x: number) => x.toFixed(2)\n",
+             export const f = (x: number) => x.toFixed(2)\n\
+             export const i = (s: string) => Number.parseInt(s, 10)\n\
+             export const p = (s: string) => Number.parseFloat(s)\n",
         );
         assert_eq!(facts.risks[&Risk::RegexSyntax], [1]);
-        assert_eq!(facts.risks[&Risk::NumberSemantics], [2, 3]);
+        assert_eq!(facts.risks[&Risk::NumberSemantics], [2, 3, 4, 5]);
     }
 
     #[test]
