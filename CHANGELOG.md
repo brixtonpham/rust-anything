@@ -4,7 +4,7 @@
 
 - `analyze` unit notes say "1 parse error", "1 npm dependency not in the crate table: check it by
   hand" and "1 import uses aliases or virtual modules and was not followed" when the count is one,
-  instead of the plural.
+  instead of the plural (#767 by @brixtonpham).
 - `record`, `diff` and `bench` on a Java unit use the `CLASSPATH` variable for classes from outside
   the source tree (a Gradle or Maven module's libraries). `javac` already read it, but the driver
   ran with its own `-cp`, so every case recorded `NoClassDefFoundError` instead of a result. When
