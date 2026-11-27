@@ -355,7 +355,9 @@ pub fn scan(source: &str) -> FileFacts {
             match op {
                 "//" | "%" | "//=" | "%=" => add(&mut facts, Risk::DivisionSemantics, node),
                 "**" | "**=" | "<<" | "<<=" => add(&mut facts, Risk::IntegerSemantics, node),
-                "&" | "|" | "^" | ">>" => add(&mut facts, Risk::NumberSemantics, node),
+                "&" | "|" | "^" | ">>" | "&=" | "|=" | "^=" | ">>=" => {
+                    add(&mut facts, Risk::NumberSemantics, node)
+                }
                 _ => {}
             }
         }
@@ -1635,13 +1637,17 @@ mod tests {
     #[test]
     fn scans_risks_and_imports() {
         let facts = scan(
-            "import os\nfrom .util import helper\nimport re\nx = 7 // 2\nre.compile(r'(?<=a)b')\nfor i in range(3): pass\n",
+            "import os\nfrom .util import helper\nimport re\nx = 7 // 2\nx &= 0xff\nx |= 1\nx ^= 2\nx >>= 1\nre.compile(r'(?<=a)b')\nfor i in range(3): pass\n",
         );
         let specs: Vec<&str> = facts.imports.iter().map(|i| i.specifier.as_str()).collect();
         assert!(
             specs.contains(&"os") && specs.contains(&".util") && specs.contains(&".util.helper")
         );
         assert!(facts.risks.contains_key(&Risk::DivisionSemantics));
+        assert_eq!(
+            facts.risks.get(&Risk::NumberSemantics).map(Vec::as_slice),
+            Some(&[5, 6, 7, 8][..])
+        );
         assert!(facts.risks.contains_key(&Risk::RegexSyntax));
         assert_eq!(facts.loops, 1);
     }
