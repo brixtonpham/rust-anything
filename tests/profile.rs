@@ -203,10 +203,12 @@ public class Hot {
 
     /// About two seconds of work, so JFR's 10 ms sampling sees it.
     public static void spin() {
+        String a = "kitten".repeat(30);
+        String b = "sitting".repeat(30);
         long total = 0;
         long end = System.nanoTime() + 2_000_000_000L;
         while (System.nanoTime() < end) {
-            for (int i = 0; i < 1000; i++) total += lev("kitten", "sitting");
+            total += lev(a, b);
         }
         if (total <= 0) throw new IllegalStateException("no work");
     }
@@ -229,8 +231,9 @@ fn profile_java_workload_whose_child_jvm_prints_to_a_pipe() {
         return;
     }
     let tmp = TempDir::new("profile-java-probe");
-    // Like Gradle reading a JDK's version: run another JVM, which inherits JAVA_TOOL_OPTIONS,
-    // and fail when its stdout holds anything but what it printed.
+    // Like Gradle reading a JDK's version and running work in a worker daemon: start a child JVM,
+    // which inherits JAVA_TOOL_OPTIONS, check that its stdout holds only what it printed, and run
+    // the hot loop in the child so the parent JVM exits last without overwriting its recording.
     java_workload(
         tmp.path(),
         r#"package demo;
@@ -241,6 +244,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
             System.out.println("probe ok");
+            Hot.spin();
             return;
         }
         String java = ProcessHandle.current().info().command().orElse("java");
@@ -253,7 +257,6 @@ public class Main {
             System.err.println("unexpected probe output: " + out);
             System.exit(3);
         }
-        Hot.spin();
     }
 }
 "#,

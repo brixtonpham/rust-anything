@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `profile` on a Java workload gives each JVM its own JFR recording (`profile-%p.jfr`) and merges
+  their samples, instead of pointing every process in `JAVA_TOOL_OPTIONS` at one `profile.jfr`
+  file that child and parent JVMs overwrote or corrupted on exit (#743).
 - `bridge --end-state replace|bindings|scaffold` records what the unit's bindings are for once the
   port is done: `replace` (the original is deleted after cut-over), `bindings` (callers keep
   importing it, so the bindings are public API) or `scaffold` (the bindings are deleted at
@@ -36,7 +39,6 @@
   with theirs.
 - `gate`'s behavior line counts the `known-diffs.jsonl` entries added since the last passing gate,
   so a behavior change that lands in the same change as the port is visible.
-
 - `analyze` also flags Python bitwise augmented assignments (`&=`, `|=`, `^=`, `>>=`) as
   `Number semantics`, alongside `&`, `|`, `^` and `>>` (and as `//=`, `%=`, `**=` and `<<=`
   already are for division and integer semantics) (#768 by @brixtonpham).
