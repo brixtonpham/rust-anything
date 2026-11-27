@@ -5,6 +5,40 @@
 - `analyze` unit notes say "1 parse error", "1 npm dependency not in the crate table: check it by
   hand" and "1 import uses aliases or virtual modules and was not followed" when the count is one,
   instead of the plural.
+- `record`, `diff` and `bench` on a Java unit use the `CLASSPATH` variable for classes from outside
+  the source tree (a Gradle or Maven module's libraries). `javac` already read it, but the driver
+  ran with its own `-cp`, so every case recorded `NoClassDefFoundError` instead of a result. When
+  `javac` fails on missing packages or symbols, the error now says to set `CLASSPATH`
+  (#744, #765 by @Layfate).
+- `record` on Windows reports how much of a TS/JS original the cases ran, as it does elsewhere.
+  V8 names files `file:///C:/...` and the unit's files were compared as `\\?\C:\...`, so no file
+  matched and the coverage line was missing (#763 by @Layfate).
+- The repository checks text files out with `\n` line endings on every OS (`.gitattributes`).
+  Git for Windows turns on `core.autocrlf` by default, which gave `docs/tools.md` and
+  `skills/rust-anything/SKILL.md` `\r\n` endings, so `tests/tools.rs` and `tests/skill.rs` failed
+  on a fresh Windows clone (#761 by @Layfate).
+- `map` names a crate folder whose `rust-anything.json` does not parse with `/` between folders
+  on Windows too (`rust/util-rs`), as it names every readable port, instead of `rust\util-rs`
+  (#760 by @Layfate).
+- `profile` on a Java workload keeps JFR's "Started recording" banner off stdout
+  (`-Xlog:jfr+startup=error`). Every JVM the workload starts inherits the JFR options, so a build
+  tool that runs `java` to read a JDK's version, as Gradle does for its toolchains, failed on the
+  banner with `Unable to determine version for JDK` before the build began
+  (#742, #759 by @Layfate).
+- `profile` on a Java workload reads all of `jfr print`'s output. It kept only the last MiB, so a
+  recording of more than a second or two failed with `jfr output: expected value` (#759).
+- `go` says "captured 1 real call" / "N real calls", "recorded N cases (N threw in the original)",
+  and "gate: 1 check fails" / "N checks fail" instead of "(s)" and "throw"
+  (#732, #757 by @Papito084).
+- `go` retry prompt says "1 distinct difference" for one difference and "N distinct differences"
+  for more, instead of "N distinct difference(s)", and "1 case" instead of "1 case(s)"
+  (#731, #756 by @Papito084).
+- `record --from-tests` says "Captured 1 call from the tests" for one call and
+  "Captured N calls from the tests" for more, instead of "Captured N call(s)"
+  (#733, #755 by @Papito084).
+- `record` says "Left out 1 input the original ran too long on" for one timed-out
+  input and "Left out N inputs ..." for more, instead of "Left out N input(s)"
+  (#734, #754 by @Papito084).
 - `fuzz --keep` says "Kept 1 case in ..." for one kept case and "Kept N cases in ..."
   for more, instead of "Kept N case(s)" (#735, #753 by @Papito084).
 - `enable --only` says "unknown export in ..." for one unknown name and "unknown exports in ..."
