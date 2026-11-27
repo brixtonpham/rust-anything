@@ -775,21 +775,27 @@ fn score(u: usize, ctx: &Ctx) -> UnitReport {
     let reasons = notes.clone();
     if unit.parse_errors > 0 {
         notes.push(format!(
-            "{} parse errors: results for this unit are partial.",
-            unit.parse_errors
+            "{}: results for this unit are partial.",
+            crate::report::count(unit.parse_errors, "parse error")
         ));
     }
     if unknown_deps > 0 {
-        notes.push(format!(
-            "{unknown_deps} {} dependencies not in the crate table: check them by hand.",
-            ctx.lang.registry()
-        ));
+        let reg = ctx.lang.registry();
+        notes.push(if unknown_deps == 1 {
+            format!("1 {reg} dependency not in the crate table: check it by hand.")
+        } else {
+            format!("{unknown_deps} {reg} dependencies not in the crate table: check them by hand.")
+        });
     }
     if unit.unresolved > 0 {
-        notes.push(format!(
-            "{} imports use aliases or virtual modules and were not followed.",
-            unit.unresolved
-        ));
+        notes.push(if unit.unresolved == 1 {
+            "1 import uses aliases or virtual modules and was not followed.".into()
+        } else {
+            format!(
+                "{} imports use aliases or virtual modules and were not followed.",
+                unit.unresolved
+            )
+        });
     }
     if cycle.len() > 1 {
         let others: Vec<&str> = cycle
@@ -1346,5 +1352,59 @@ mod tests {
     #[test]
     fn sorts_packages_topologically() {
         assert_eq!(topological(&[vec![1], vec![], vec![0, 1]]), [1, 0, 2]);
+    }
+
+    #[test]
+    fn unit_notes_use_singular_for_one_parse_error_unknown_dep_or_unresolved_import() {
+        let root = std::env::temp_dir().join(format!("ra-unit-notes-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("src/errs")).unwrap();
+        for (path, text) in [
+            ("package.json", r#"{"name":"t"}"#),
+            ("src/err1.ts", "export const x = (\n"),
+            ("src/errs/a.ts", "export const a = (\n"),
+            ("src/errs/b.ts", "export const b = (\n"),
+            (
+                "src/one.ts",
+                "import 'mystery-pkg-1'\nimport 'virtual:mod-1'\nexport const x = 1\n",
+            ),
+            (
+                "src/two.ts",
+                "import 'mystery-pkg-1'\nimport 'mystery-pkg-2'\nimport 'virtual:mod-1'\nimport 'virtual:mod-2'\nexport const y = 2\n",
+            ),
+        ] {
+            std::fs::write(root.join(path), text).unwrap();
+        }
+        let report = analyze(&root).unwrap();
+        std::fs::remove_dir_all(&root).unwrap();
+        for (id, expected) in [
+            (
+                "src/err1.ts",
+                "1 parse error: results for this unit are partial.",
+            ),
+            (
+                "src/errs/",
+                "2 parse errors: results for this unit are partial.",
+            ),
+            (
+                "src/one.ts",
+                "1 npm dependency not in the crate table: check it by hand.",
+            ),
+            (
+                "src/one.ts",
+                "1 import uses aliases or virtual modules and was not followed.",
+            ),
+            (
+                "src/two.ts",
+                "2 npm dependencies not in the crate table: check them by hand.",
+            ),
+            (
+                "src/two.ts",
+                "2 imports use aliases or virtual modules and were not followed.",
+            ),
+        ] {
+            let notes = &report.units.iter().find(|u| u.id == id).unwrap().notes;
+            assert!(notes.iter().any(|n| n == expected), "{id}: {notes:?}");
+        }
     }
 }

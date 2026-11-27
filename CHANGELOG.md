@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `analyze` unit notes say "1 parse error", "1 npm dependency not in the crate table: check it by
+  hand" and "1 import uses aliases or virtual modules and was not followed" when the count is one,
+  instead of the plural.
 - `fuzz --keep` says "Kept 1 case in ..." for one kept case and "Kept N cases in ..."
   for more, instead of "Kept N case(s)" (#735, #753 by @Papito084).
 - `enable --only` says "unknown export in ..." for one unknown name and "unknown exports in ..."
