@@ -305,7 +305,10 @@ fn a_language_the_folder_lacks_is_an_error_not_an_empty_plan() {
     assert_eq!(frontend.unwrap().summary.ui_files, 1);
     let err = hidden.unwrap_err().to_string();
     assert!(err.contains("no Python source files"), "{err}");
-    assert!(err.contains("excluded by ignore rules"), "{err}");
+    assert!(
+        err.contains("1 Python file under") && err.contains("is excluded by ignore rules"),
+        "{err}"
+    );
 }
 
 #[test]

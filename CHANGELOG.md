@@ -3,7 +3,8 @@
 ## Unreleased
 
 - `analyze`'s empty-plan warnings say "1 TypeScript/JavaScript file under ... is excluded" and
-  "only 1 compiled or packaged file" for one file, instead of "1 ... files ... are" (#738, #746 by @brixtonpham).
+  "only 1 compiled or packaged file" for one file, instead of "1 ... files ... are"
+  (#738, #746 by @brixtonpham).
 - `npx rust-anything@latest setup` now leaves agents that keep working: a copy run from npx's
   cache sets each agent to start `npx -y rust-anything@<version> mcp` (`cmd /c npx ...` on
   Windows) instead of the cached binary, which npm may delete. `doctor` reads that entry as
