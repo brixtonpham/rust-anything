@@ -41,6 +41,9 @@
 - `gate`'s behavior line counts the `known-diffs.jsonl` entries added since the last passing gate,
   so a behavior change that lands in the same change as the port is visible.
 
+- `analyze` also flags TS/JS unary `~` and bitwise assignment operators (`&=`, `|=`, `^=`, `<<=`,
+  `>>=`, `>>>=`) as `Number semantics`, alongside the binary bitwise operators: all of them
+  truncate `f64` numbers to 32-bit integers (#789 by @brixtonpham).
 - `analyze` also flags Python bitwise augmented assignments (`&=`, `|=`, `^=`, `>>=`) as
   `Number semantics`, alongside `&`, `|`, `^` and `>>` (and as `//=`, `%=`, `**=` and `<<=`
   already are for division and integer semantics) (#768 by @brixtonpham).
