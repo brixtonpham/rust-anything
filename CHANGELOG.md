@@ -4,7 +4,7 @@
 
 - `analyze` also flags Python bitwise augmented assignments (`&=`, `|=`, `^=`, `>>=`) as
   `Number semantics`, alongside `&`, `|`, `^` and `>>` (and as `//=`, `%=`, `**=` and `<<=`
-  already are for division and integer semantics).
+  already are for division and integer semantics) (#768 by @brixtonpham).
 - `analyze` unit notes say "1 parse error", "1 npm dependency not in the crate table: check it by
   hand" and "1 import uses aliases or virtual modules and was not followed" when the count is one,
   instead of the plural (#767 by @brixtonpham).
