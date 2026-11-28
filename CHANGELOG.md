@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.0.2 (2026-11-28)
+
 - `profile` on Java keeps the samples of every JVM the workload starts. Each one now writes its own
   recording (`profile-<pid>.jfr`) and `profile` reads them all, where they used to share one
   `profile.jfr` and the last JVM to exit replaced the others, so work done in a child JVM (a Gradle
